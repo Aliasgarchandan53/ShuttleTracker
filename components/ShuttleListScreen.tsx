@@ -37,7 +37,7 @@ const ShuttleListScreen: React.FC = () => {
             style={styles.card}
             onPress={() => navigation.navigate('ShuttleDetail', { shuttle: item })}
           >
-            <Text style={styles.title}>{item.from} ➜ {item.to}</Text>
+            <Text style={styles.title}>Shuttle S{item.id} : {item.from} ➜ {item.to}</Text>
             <Text>Status: {item.active ? 'Running' : 'Not Running'}</Text>
           </TouchableOpacity>
         )}

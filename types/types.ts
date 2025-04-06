@@ -29,3 +29,11 @@ export type Shuttle = {
     Map: { shuttle: Shuttle };
   };
   
+  export type BluetoothDevice = {
+    name: string;
+    address: string;
+    id?: string;
+    connected?: boolean;
+    [key: string]: any; // fallback for missing fields
+  };
+  

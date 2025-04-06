@@ -8,8 +8,11 @@ const FilterScreen: React.FC = () => {
     'Main Block': true,
   });
 
-  const toggle = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (selectedKey: string) => {
+    const updatedFilters = Object.fromEntries(
+      Object.keys(filters).map((key) => [key, key === selectedKey])
+    );
+    setFilters(updatedFilters);
   };
 
   return (
