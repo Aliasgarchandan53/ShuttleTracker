@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,17 @@ import {
   FlatList,
   PermissionsAndroid,
   Platform,
+  ScrollView,
 } from 'react-native';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
-import {BluetoothDevice} from '../types/types'
+import { BluetoothDevice } from '../types/types';
 
 const MapScreen = () => {
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
+  const [error, setError] = useState('');
+  const [receivedData, setReceivedData] = useState<string[]>([]);
+  const [subscription, setSubscription] = useState<any>(null);
 
   const requestPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -27,10 +31,12 @@ const MapScreen = () => {
   const scanDevices = async () => {
     try {
       await requestPermissions();
-      const available = await (RNBluetoothClassic as any).list(); // 👈 cast to `any` for list()
+      const available = await RNBluetoothClassic.getBondedDevices();
       setDevices(available);
-    } catch (error) {
+      setError('');
+    } catch (error: any) {
       console.error('Error listing devices:', error);
+      setError(error.message);
     }
   };
 
@@ -39,25 +45,31 @@ const MapScreen = () => {
       const connected = await (RNBluetoothClassic as any).connectToDevice(device.address);
       if (connected) {
         setConnectedDevice(device);
-        startReading();
+        startReading(); // Start listening to data
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error('Connection failed', error);
+      setError('Connection failed: ' + error.message);
     }
   };
 
   const startReading = async () => {
-    const subscription = (RNBluetoothClassic as any).onDataReceived((data: any) => {
-      console.log('Received:', data.data);
-      // Handle GPS data here
+    const sub = (RNBluetoothClassic as any).onDataReceived((event: { data: string }) => {
+      console.log('Received:', event.data);
+      setReceivedData(prev => [...prev, event.data]);
     });
-
-    // Optional cleanup
-    return () => subscription.remove();
+    setSubscription(sub);
   };
 
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      if (subscription) subscription.remove();
+    };
+  }, [subscription]);
+
   return (
-    <View style={{ padding: 20 }}>
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
       <Button title="Scan Bluetooth Devices" onPress={scanDevices} />
 
       <FlatList
@@ -72,11 +84,26 @@ const MapScreen = () => {
       />
 
       {connectedDevice && (
-        <View>
-          <Text>Connected to: {connectedDevice.name}</Text>
+        <View style={{ marginVertical: 20 }}>
+          <Text style={{ fontWeight: 'bold' }}>Connected to: {connectedDevice.name}</Text>
         </View>
       )}
-    </View>
+
+      {error && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ color: 'red' }}>Connection error: {error}</Text>
+        </View>
+      )}
+
+      {receivedData.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold' }}>📍 Received GPS Data:</Text>
+          {receivedData.map((data, index) => (
+            <Text key={index}>{data}</Text>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 };
 
