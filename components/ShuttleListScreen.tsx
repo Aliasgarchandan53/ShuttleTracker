@@ -7,8 +7,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList, Shuttle, FilterMap } from '../types';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList, Shuttle, FilterMap } from '../types/types';
 
 const shuttleData: Shuttle[] = [
   { id: '1', from: 'Campus', to: 'Gate 1', active: true },
@@ -16,8 +16,10 @@ const shuttleData: Shuttle[] = [
   { id: '3', from: 'Hostel', to: 'Main Block', active: true },
 ];
 
+type NavigationProp = StackNavigationProp<RootStackParamList, 'ShuttleList'>;
+
 const ShuttleListScreen: React.FC = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp>();
   const [filters, setFilters] = useState<FilterMap>({});
 
   const applyFilters = (shuttle: Shuttle) => {

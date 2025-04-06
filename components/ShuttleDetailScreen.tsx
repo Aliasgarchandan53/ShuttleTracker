@@ -1,15 +1,18 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../types/types';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList, Shuttle } from '../types/types';
 
 type Props = {
   route: RouteProp<RootStackParamList, 'ShuttleDetail'>;
 };
 
+type NavigationProp = StackNavigationProp<RootStackParamList, 'ShuttleDetail'>;
+
 const ShuttleDetailScreen: React.FC<Props> = ({ route }) => {
+  const navigation = useNavigation<NavigationProp>();
   const { shuttle } = route.params;
-  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
