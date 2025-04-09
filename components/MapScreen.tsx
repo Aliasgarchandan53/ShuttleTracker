@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,23 @@ import {
   PermissionsAndroid,
   Platform,
   ScrollView,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
-import { BluetoothDevice } from '../types/types';
+import axios from 'axios';
+
+const SERVER_URL = 'http://172.17.16.26:3000/location';
 
 const MapScreen = () => {
-  const [devices, setDevices] = useState<BluetoothDevice[]>([]);
-  const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
-  const [error, setError] = useState('');
+  const [bluetoothEnabled, setBluetoothEnabled] = useState(false);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [connectedDevice, setConnectedDevice] = useState<any | null>(null);
   const [receivedData, setReceivedData] = useState<string[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const requestPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -28,146 +35,156 @@ const MapScreen = () => {
     }
   };
 
+  const checkBluetoothStatus = async () => {
+    const enabled = await RNBluetoothClassic.isBluetoothEnabled();
+    setBluetoothEnabled(enabled);
+  };
+
   const scanDevices = async () => {
     try {
       await requestPermissions();
       const available = await RNBluetoothClassic.getBondedDevices();
       setDevices(available);
       setError('');
-    } catch (error: any) {
-      console.error('Error listing devices:', error);
-      setError(error.message);
+    } catch (err: any) {
+      console.error('Error listing devices:', err);
+      setError(err.message);
     }
   };
 
-  const connectToDevice = async (device: BluetoothDevice) => {
+  const connectToDevice = async (device: any) => {
     try {
-      const connected = await (RNBluetoothClassic as any).connectToDevice(device.address);
+      const connected = await RNBluetoothClassic.connectToDevice(device.address);
       if (connected) {
         setConnectedDevice(device);
-        startReading(); // Start listening to data
+        startReading();
       }
-    } catch (error:any) {
-      console.error('Connection failed', error);
-      setError('Connection failed: ' + error.message);
+    } catch (err: any) {
+      console.error('Connection failed', err);
+      setError('Connection failed: ' + err.message);
     }
   };
 
-  const startReading = async () => {
-    const sub = (RNBluetoothClassic as any).onDataReceived((event: { data: string }) => {
+  const startReading = () => {
+    if (!connectedDevice) return;
+  
+    const sub = RNBluetoothClassic.onDeviceRead(connectedDevice.address, (event: { data: string }) => {
       console.log('Received:', event.data);
       setReceivedData(prev => [...prev, event.data]);
     });
+  
     setSubscription(sub);
+  };
+  
+
+  const fetchLocationFromServer = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(SERVER_URL, { timeout: 10000 });
+      if (res.data.latitude && res.data.longitude) {
+        setLocation({ latitude: res.data.latitude, longitude: res.data.longitude });
+        setError('');
+      } else {
+        setError('Invalid location data');
+      }
+    } catch (err: any) {
+      console.error('Fetch error:', err);
+      setError(err.message || 'Failed to fetch location');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
+    checkBluetoothStatus();
+    if (!bluetoothEnabled) {
+      fetchLocationFromServer();
+    }
+  }, [bluetoothEnabled]);
+
+  useEffect(() => {
     return () => {
-      // Cleanup on unmount
       if (subscription) subscription.remove();
     };
   }, [subscription]);
 
-  return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Button title="Scan Bluetooth Devices" onPress={scanDevices} />
+  if (bluetoothEnabled) {
+    // Bluetooth-based GPS mode
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <Button title="Scan Bluetooth Devices" onPress={scanDevices} />
 
-      <FlatList
-        data={devices}
-        keyExtractor={(item) => item.address}
-        renderItem={({ item }) => (
-          <View style={{ marginVertical: 10 }}>
-            <Text>{item.name}</Text>
-            <Button title="Connect" onPress={() => connectToDevice(item)} />
+        <FlatList
+          data={devices}
+          keyExtractor={(item) => item.address}
+          renderItem={({ item }) => (
+            <View style={styles.deviceItem}>
+              <Text>{item.name}</Text>
+              <Button title="Connect" onPress={() => connectToDevice(item)} />
+            </View>
+          )}
+        />
+
+        {connectedDevice && (
+          <View style={styles.statusBox}>
+            <Text style={styles.statusText}>Connected to: {connectedDevice.name}</Text>
           </View>
         )}
-      />
 
-      {connectedDevice && (
-        <View style={{ marginVertical: 20 }}>
-          <Text style={{ fontWeight: 'bold' }}>Connected to: {connectedDevice.name}</Text>
+        {error && <Text style={styles.errorText}> {error}</Text>}
+
+        {receivedData.length > 0 ? (
+          <View style={styles.dataBox}>
+            <Text style={styles.dataTitle}> Received GPS Data:</Text>
+            {receivedData.map((data, idx) => (
+              <Text key={idx}>{data}</Text>
+            ))}
+          </View>
+        ) : (
+          <Text>No GPS data received yet.</Text>
+        )}
+      </ScrollView>
+    );
+  }
+
+  // Internet-based GPS mode
+  return (
+    <View style={styles.container}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Fetching location from server...</Text>
         </View>
+      ) : location ? (
+        <View style={styles.locationBox}>
+          <Text style={styles.coordLabel}>📍 Latitude: <Text style={styles.coord}>{location.latitude}</Text></Text>
+          <Text style={styles.coordLabel}>📍 Longitude: <Text style={styles.coord}>{location.longitude}</Text></Text>
+        </View>
+      ) : (
+        <Text>No location data available.</Text>
       )}
 
-      {error && (
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ color: 'red' }}>Connection error: {error}</Text>
-        </View>
+      {error !== '' && (
+        <Text style={styles.errorText}> {error}</Text>
       )}
 
-      {receivedData.length > 0 && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold' }}>📍 Received GPS Data:</Text>
-          {receivedData.map((data, index) => (
-            <Text key={index}>{data}</Text>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+      <Button title="Refresh Now" onPress={fetchLocationFromServer} />
+    </View>
   );
 };
 
+const styles = StyleSheet.create({
+  container: { padding: 20 },
+  loadingContainer: { alignItems: 'center', justifyContent: 'center', height: 200 },
+  deviceItem: { marginVertical: 10 },
+  statusBox: { marginVertical: 20 },
+  statusText: { fontWeight: 'bold' },
+  dataBox: { marginTop: 20 },
+  dataTitle: { fontSize: 16, fontWeight: 'bold' },
+  errorText: { color: 'red', marginTop: 10 },
+  locationBox: { marginTop: 30 },
+  coordLabel: { fontSize: 16, fontWeight: '600' },
+  coord: { fontWeight: 'normal' },
+});
+
 export default MapScreen;
-
-
-
-// import React, { useEffect, useState } from 'react';
-// import { View, Text, StyleSheet } from 'react-native';
-// import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-// import { RouteProp } from '@react-navigation/native';
-// import { RootStackParamList } from '../types/types';
-// import { useShuttleStore } from '../store/useShuttleStore'; // Zustand store with live location
-
-// type Props = {
-//   route: RouteProp<RootStackParamList, 'Map'>;
-// };
-
-// const MapScreen: React.FC<Props> = ({ route }) => {
-//   const { shuttle } = route.params;
-
-//   // Assume the shuttle store has location data
-//   const liveLocation = useShuttleStore((state) => state.liveLocation);
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Map for Shuttle:</Text>
-//       <Text style={styles.subtitle}>{shuttle.from} ➜ {shuttle.to}</Text>
-
-//       <MapView
-//         style={styles.map}
-//         provider={PROVIDER_GOOGLE}
-//         region={{
-//           latitude: liveLocation?.latitude || 12.9716, // fallback to BLR
-//           longitude: liveLocation?.longitude || 77.5946,
-//           latitudeDelta: 0.01,
-//           longitudeDelta: 0.01,
-//         }}
-//       >
-//         {liveLocation && (
-//           <Marker
-//             coordinate={{
-//               latitude: liveLocation.latitude,
-//               longitude: liveLocation.longitude,
-//             }}
-//             title="Shuttle Location"
-//             description={`${shuttle.from} ➜ ${shuttle.to}`}
-//           />
-//         )}
-//       </MapView>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1 },
-//   title: { fontSize: 22, fontWeight: 'bold', padding: 16 },
-//   subtitle: { fontSize: 16, paddingHorizontal: 16 },
-//   map: {
-//     flex: 1,
-//     margin: 16,
-//     borderRadius: 12,
-//     overflow: 'hidden',
-//   },
-// });
-
-// export default MapScreen;

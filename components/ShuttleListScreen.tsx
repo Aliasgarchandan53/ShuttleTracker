@@ -9,16 +9,14 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, Shuttle, FilterMap } from '../types/types';
-
-const shuttleData: Shuttle[] = [
-  { id: '1', from: 'Campus', to: 'Gate 1', active: true },
-  { id: '2', from: 'Campus', to: 'Gate 2', active: false },
-  { id: '3', from: 'Hostel', to: 'Main Block', active: true },
-];
+import useShuttleStore from '../stores/ShuttleStore';
+import Feather from 'react-native-vector-icons/Feather'; // ✅ import icon
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'ShuttleList'>;
 
 const ShuttleListScreen: React.FC = () => {
+  const shuttles = useShuttleStore((state) => state.shuttles);
+  const removeShuttle = useShuttleStore((state:any) => state.removeShuttle);
   const navigation = useNavigation<NavigationProp>();
   const [filters, setFilters] = useState<FilterMap>({});
 
@@ -30,16 +28,29 @@ const ShuttleListScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={shuttleData.filter(applyFilters)}
+        data={shuttles.filter(applyFilters)}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('ShuttleDetail', { shuttle: item })}
-          >
-            <Text style={styles.title}>Shuttle S{item.id} : {item.from} ➜ {item.to}</Text>
-            <Text>Status: {item.active ? 'Running' : 'Not Running'}</Text>
-          </TouchableOpacity>
+          <View style={styles.card}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('ShuttleDetail', { shuttle: item })
+              }
+              style={styles.shuttleInfo}
+            >
+              <Text style={styles.title}>
+                Shuttle S{item.id} : {item.from} ➜ {item.to}
+              </Text>
+              <Text>Status: {item.active ? 'Running' : 'Not Running'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => removeShuttle(item.id)}
+            >
+              <Feather name="trash-2" size={20} color="#e74c3c" />
+            </TouchableOpacity>
+          </View>
         )}
       />
 
@@ -68,8 +79,18 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shuttleInfo: {
+    flex: 1,
+    paddingRight: 10,
   },
   title: { fontSize: 18, fontWeight: 'bold' },
+  iconButton: {
+    padding: 6,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
