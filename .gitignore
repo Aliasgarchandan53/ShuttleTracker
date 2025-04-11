@@ -1,3 +1,7 @@
+#environment variables
+*.env
+#api key maps
+android/app/src/main/res/values/google_maps_api.xml
 # OSX
 #
 .DS_Store
