@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import {
   View,
   Text,
@@ -126,14 +127,29 @@ const MapScreen = () => {
         />
 
         {connectedDevice && (
+          <View>
           <View style={styles.statusBox}>
             <Text style={styles.statusText}>Connected to: {connectedDevice.name}</Text>
           </View>
+          <View style={styles.mapContainer}>
+          <MapView
+            provider={PROVIDER_GOOGLE} 
+            style={styles.map}
+            region={{
+              latitude: 37.78825,
+              longitude: -122.4324,
+              latitudeDelta: 0.015,
+              longitudeDelta: 0.0121,
+            }}
+          >
+          </MapView>
+        </View>
+        </View>
         )}
 
-        {error && <Text style={styles.errorText}> {error}</Text>}
+        {/* {error && <Text style={styles.errorText}> {error}</Text>} */}
 
-        {receivedData.length > 0 ? (
+        {/* {receivedData.length > 0 ? (
           <View style={styles.dataBox}>
             <Text style={styles.dataTitle}> Received GPS Data:</Text>
             {receivedData.map((data, idx) => (
@@ -142,35 +158,35 @@ const MapScreen = () => {
           </View>
         ) : (
           <Text>No GPS data received yet.</Text>
-        )}
+        )} */}
       </ScrollView>
     );
   }
 
-  // Internet-based GPS mode
-  return (
-    <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text>Fetching location from server...</Text>
-        </View>
-      ) : location ? (
-        <View style={styles.locationBox}>
-          <Text style={styles.coordLabel}>📍 Latitude: <Text style={styles.coord}>{location.latitude}</Text></Text>
-          <Text style={styles.coordLabel}>📍 Longitude: <Text style={styles.coord}>{location.longitude}</Text></Text>
-        </View>
-      ) : (
-        <Text>No location data available.</Text>
-      )}
+  // // Internet-based GPS mode
+  // return (
+  //   <View style={styles.container}>
+  //     {loading ? (
+  //       <View style={styles.loadingContainer}>
+  //         <ActivityIndicator size="large" color="#0000ff" />
+  //         <Text>Fetching location from server...</Text>
+  //       </View>
+  //     ) : location ? (
+  //       <View style={styles.locationBox}>
+  //         <Text style={styles.coordLabel}>📍 Latitude: <Text style={styles.coord}>{location.latitude}</Text></Text>
+  //         <Text style={styles.coordLabel}>📍 Longitude: <Text style={styles.coord}>{location.longitude}</Text></Text>
+  //       </View>
+  //     ) : (
+  //       <Text>No location data available.</Text>
+  //     )}
 
-      {error !== '' && (
-        <Text style={styles.errorText}> {error}</Text>
-      )}
+  //     {error !== '' && (
+  //       <Text style={styles.errorText}> {error}</Text>
+  //     )}
 
-      <Button title="Refresh Now" onPress={fetchLocationFromServer} />
-    </View>
-  );
+  //     <Button title="Refresh Now" onPress={fetchLocationFromServer} />
+  //   </View>
+  // );
 };
 
 const styles = StyleSheet.create({
@@ -185,6 +201,16 @@ const styles = StyleSheet.create({
   locationBox: { marginTop: 30 },
   coordLabel: { fontSize: 16, fontWeight: '600' },
   coord: { fontWeight: 'normal' },
+  mapContainer: {
+    ...StyleSheet.absoluteFillObject,
+    height: 400,
+    width: 400,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
 });
 
 export default MapScreen;
