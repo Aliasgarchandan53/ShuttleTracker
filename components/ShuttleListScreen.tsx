@@ -45,10 +45,10 @@ const ShuttleListScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.iconButton}
+              style={styles.deleteButton}
               onPress={() => removeShuttle(item.id)}
             >
-              <Feather name="trash-2" size={20} color="#e74c3c" />
+              <Text style={styles.deleteButtonText}>Remove</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -88,8 +88,13 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   title: { fontSize: 18, fontWeight: 'bold' },
-  iconButton: {
-    padding: 6,
+  deleteButtonText: {
+    color: '#fff', textAlign: 'center', fontWeight: 'bold'
+  },
+  deleteButton:{
+    backgroundColor: 'red',
+    padding: 8,
+    borderRadius: 8,
   },
   footer: {
     flexDirection: 'row',

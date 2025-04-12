@@ -5,7 +5,7 @@ const FilterScreen: React.FC = () => {
   const [filters, setFilters] = useState<{ [key: string]: boolean }>({
     'Gate 1': true,
     'Gate 2': false,
-    'Main Block': true,
+    'Main Block': false,
   });
 
   const toggle = (selectedKey: string) => {
