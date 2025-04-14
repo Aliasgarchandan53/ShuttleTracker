@@ -19,12 +19,10 @@ const ShuttleListScreen: React.FC = () => {
   const removeShuttle = useShuttleStore((state:any) => state.removeShuttle);
   const navigation = useNavigation<NavigationProp>();
   const [filters, setFilters] = useState<FilterMap>({});
-
   const applyFilters = (shuttle: Shuttle) => {
     if (Object.keys(filters).length === 0) return true;
     return filters[shuttle.to];
   };
-
   return (
     <View style={styles.container}>
       <FlatList

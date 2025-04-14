@@ -13,12 +13,12 @@ import MapScreen from './components/MapScreen';
 import { StyleSheet, Dimensions } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
+//initial route can be assigned login after implementing authentication
 const App: React.FC = () => {
   return (
     <NavigationContainer >
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator initialRouteName="ShuttleList"> 
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ShuttleList" component={ShuttleListScreen} options={{ title: 'Shuttles' }} />
         <Stack.Screen name="AddShuttle" component={AddShuttleScreen} options={{ title: 'Add Shuttle' }} />

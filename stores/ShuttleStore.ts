@@ -7,9 +7,7 @@ type ShuttleStore = {
 
 const useShuttleStore = create<ShuttleStore>()((set) => ({
   shuttles: [
-    { id: '1', from: 'Campus', to: 'Gate 1', active: true },
-    { id: '2', from: 'Campus', to: 'Gate 2', active: false },
-    { id: '3', from: 'Hostel', to: 'Main Block', active: true },
+    { id: '1', from: 'SJT', to: 'MB', active: true },
   ],
 
   addShuttle: (shuttle:Shuttle) =>
